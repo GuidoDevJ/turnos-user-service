@@ -1,26 +1,31 @@
-import { Router } from "express";
+import { Router, RequestHandler } from "express";
 import { UserController } from "../controllers/user.controller";
 import { validate } from "../middlewares/validate.middleware";
 import { firebaseAuth } from "../middlewares/firebase-auth.middleware";
 import {
   createUserSchema,
-  registerUserSchema,
   updateUserSchema,
   paginationSchema,
   idParamSchema,
   emailParamSchema,
 } from "../validators/user.validator";
+import { registerClientSchema } from "../validators/client.validator";
+import { registerProfessionalSchema } from "../validators/professional.validator";
 
 /**
  * Creates the user router with all CRUD endpoints.
  * @param controller - The UserController instance (already wired to use cases)
+ * @param authMiddleware - Auth middleware to apply. Defaults to firebaseAuth. Pass a no-op for tests.
  * @returns Express Router
  */
-export function createUserRouter(controller: UserController): Router {
+export function createUserRouter(
+  controller: UserController,
+  authMiddleware: RequestHandler = firebaseAuth
+): Router {
   const router = Router();
 
-  // All user routes require Firebase authentication
-  router.use(firebaseAuth);
+  // All user routes require authentication
+  router.use(authMiddleware);
 
   /**
    * @openapi
@@ -53,21 +58,21 @@ export function createUserRouter(controller: UserController): Router {
    * /api/users/client:
    *   post:
    *     tags: [Users]
-   *     summary: Register a new client user
-   *     description: Creates a user with the "user" role automatically assigned
+   *     summary: Register a new client
+   *     description: Creates a user with the CLIENT role and a linked client profile atomically
    *     requestBody:
    *       required: true
    *       content:
    *         application/json:
    *           schema:
-   *             $ref: '#/components/schemas/RegisterUserInput'
+   *             $ref: '#/components/schemas/RegisterClientInput'
    *     responses:
    *       201:
-   *         description: Client user created successfully
+   *         description: Client registered successfully
    *         content:
    *           application/json:
    *             schema:
-   *               $ref: '#/components/schemas/UserResponse'
+   *               $ref: '#/components/schemas/UserFullProfileResponse'
    *       400:
    *         description: Validation error
    *       409:
@@ -75,7 +80,7 @@ export function createUserRouter(controller: UserController): Router {
    */
   router.post(
     "/client",
-    validate(registerUserSchema, "body"),
+    validate(registerClientSchema, "body"),
     controller.createClient
   );
 
@@ -84,21 +89,21 @@ export function createUserRouter(controller: UserController): Router {
    * /api/users/professional:
    *   post:
    *     tags: [Users]
-   *     summary: Register a new professional user
-   *     description: Creates a user with the "professional" role automatically assigned
+   *     summary: Register a new professional
+   *     description: Creates a user with the PROFESSIONAL role and a linked professional profile atomically
    *     requestBody:
    *       required: true
    *       content:
    *         application/json:
    *           schema:
-   *             $ref: '#/components/schemas/RegisterUserInput'
+   *             $ref: '#/components/schemas/RegisterProfessionalInput'
    *     responses:
    *       201:
-   *         description: Professional user created successfully
+   *         description: Professional registered successfully
    *         content:
    *           application/json:
    *             schema:
-   *               $ref: '#/components/schemas/UserResponse'
+   *               $ref: '#/components/schemas/UserFullProfileResponse'
    *       400:
    *         description: Validation error
    *       409:
@@ -106,7 +111,7 @@ export function createUserRouter(controller: UserController): Router {
    */
   router.post(
     "/professional",
-    validate(registerUserSchema, "body"),
+    validate(registerProfessionalSchema, "body"),
     controller.createProfessional
   );
 
@@ -158,6 +163,34 @@ export function createUserRouter(controller: UserController): Router {
     "/email/:email",
     validate(emailParamSchema, "params"),
     controller.getByEmail
+  );
+
+  /**
+   * @openapi
+   * /api/users/{id}/profile:
+   *   get:
+   *     tags: [Users]
+   *     summary: Get the full profile of a user (base data + client or professional extension)
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: integer
+   *     responses:
+   *       200:
+   *         description: Full user profile
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/UserFullProfileResponse'
+   *       404:
+   *         description: User not found
+   */
+  router.get(
+    "/:id/profile",
+    validate(idParamSchema, "params"),
+    controller.getFullProfile
   );
 
   /**

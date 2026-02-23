@@ -5,6 +5,6 @@
  */
 export const RoleId = {
   ADMIN: parseInt(process.env.ROLE_ID_ADMIN || "1", 10),
-  CLIENT: parseInt(process.env.ROLE_ID_CLIENT || "2", 10),
-  PROFESSIONAL: parseInt(process.env.ROLE_ID_PROFESSIONAL || "3", 10),
+  PROFESSIONAL: parseInt(process.env.ROLE_ID_PROFESSIONAL || "2", 10),
+  CLIENT: parseInt(process.env.ROLE_ID_CLIENT || "3", 10),
 } as const;

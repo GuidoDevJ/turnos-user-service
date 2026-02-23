@@ -7,6 +7,7 @@ import { GetUserByEmailUseCase } from "../../../application/use-cases/get-user-b
 import { ListUsersUseCase } from "../../../application/use-cases/list-users.use-case";
 import { UpdateUserUseCase } from "../../../application/use-cases/update-user.use-case";
 import { DeleteUserUseCase } from "../../../application/use-cases/delete-user.use-case";
+import { GetUserFullProfileUseCase } from "../../../application/use-cases/user/get-user-full-profile.use-case";
 
 /**
  * HTTP controller for User endpoints.
@@ -21,7 +22,8 @@ export class UserController {
     private readonly getUserByEmailUseCase: GetUserByEmailUseCase,
     private readonly listUsersUseCase: ListUsersUseCase,
     private readonly updateUserUseCase: UpdateUserUseCase,
-    private readonly deleteUserUseCase: DeleteUserUseCase
+    private readonly deleteUserUseCase: DeleteUserUseCase,
+    private readonly getUserFullProfileUseCase: GetUserFullProfileUseCase
   ) {}
 
   /**
@@ -164,6 +166,25 @@ export class UserController {
     try {
       const user = await this.deleteUserUseCase.execute(Number(req.params.id));
       res.json({ status: "success", data: user });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * GET /api/users/:id/profile
+   * Returns the full profile of a user (base data + client or professional extension).
+   */
+  getFullProfile = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const profile = await this.getUserFullProfileUseCase.execute(
+        Number(req.params.id)
+      );
+      res.json({ status: "success", data: profile });
     } catch (error) {
       next(error);
     }

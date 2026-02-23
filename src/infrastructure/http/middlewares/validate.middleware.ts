@@ -28,7 +28,14 @@ export function validate(
       return;
     }
 
-    req[source] = result.data;
+    // Express 5 defines req.query and req.params as getter-only on the prototype.
+    // Use Object.defineProperty to shadow them on the instance.
+    Object.defineProperty(req, source, {
+      value: result.data,
+      writable: true,
+      configurable: true,
+      enumerable: true,
+    });
     next();
   };
 }

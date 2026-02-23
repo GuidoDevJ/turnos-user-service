@@ -8,6 +8,7 @@ import {
   PaginatedResult,
 } from "../../../domain/entities/user.entity";
 import { ConflictError } from "../../../domain/errors/domain.error";
+import { p2002Field } from "./prisma-error.helper";
 
 /**
  * Prisma-based implementation of the IUserRepository port.
@@ -22,8 +23,7 @@ export class PrismaUserRepository implements IUserRepository {
       return await this.prisma.user.create({ data });
     } catch (error: any) {
       if (error.code === "P2002") {
-        const target = error.meta?.target as string[] | undefined;
-        const field = target?.[0] || "field";
+        const field = p2002Field(error.meta) ?? "field";
         throw new ConflictError(`A user with this ${field} already exists`);
       }
       throw error;
@@ -74,8 +74,7 @@ export class PrismaUserRepository implements IUserRepository {
       return await this.prisma.user.update({ where: { id }, data });
     } catch (error: any) {
       if (error.code === "P2002") {
-        const target = error.meta?.target as string[] | undefined;
-        const field = target?.[0] || "field";
+        const field = p2002Field(error.meta) ?? "field";
         throw new ConflictError(`A user with this ${field} already exists`);
       }
       throw error;

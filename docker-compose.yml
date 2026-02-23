@@ -12,5 +12,21 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
 
+  localstack:
+    image: localstack/localstack:4
+    container_name: turnos-localstack
+    restart: unless-stopped
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+      - AWS_DEFAULT_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+    volumes:
+      - localstack_data:/var/lib/localstack
+      - ./scripts/localstack-init.sh:/etc/localstack/init/ready.d/init-sqs.sh
+
 volumes:
   pgdata:
+  localstack_data:
