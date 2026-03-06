@@ -13,6 +13,9 @@ import { ListUsersUseCase } from "../../application/use-cases/list-users.use-cas
 import { UpdateUserUseCase } from "../../application/use-cases/update-user.use-case";
 import { DeleteUserUseCase } from "../../application/use-cases/delete-user.use-case";
 import { GetUserFullProfileUseCase } from "../../application/use-cases/user/get-user-full-profile.use-case";
+import { AssignUserRoleUseCase } from "../../application/use-cases/user/assign-user-role.use-case";
+import { PrismaRoleCacheRepository } from "../../infrastructure/database/prisma/role-cache.repository.impl";
+import { SyncRoleCacheUseCase } from "../../application/use-cases/role/sync-role-cache.use-case";
 import { CreateClientUseCase } from "../../application/use-cases/create-client.use-case";
 import { GetClientUseCase } from "../../application/use-cases/client/get-client.use-case";
 import { UpdateClientUseCase } from "../../application/use-cases/client/update-client.use-case";
@@ -52,23 +55,33 @@ export function buildTestApp(prisma: PrismaClient): Application {
   const userRepo = new PrismaUserRepository(prisma);
   const clientRepo = new PrismaClientRepository(prisma);
   const professionalRepo = new PrismaProfessionalRepository(prisma);
+  const roleCacheRepo = new PrismaRoleCacheRepository(prisma);
+  const syncRoleCacheUseCase = new SyncRoleCacheUseCase(roleCacheRepo);
+  // suppress unused-variable warning
+  void syncRoleCacheUseCase;
 
   const getUserFullProfile = new GetUserFullProfileUseCase(
     userRepo,
     clientRepo,
-    professionalRepo
+    professionalRepo,
+    roleCacheRepo
+  );
+
+  const assignUserRole = new AssignUserRoleUseCase(
+    userRepo, clientRepo, professionalRepo, roleCacheRepo
   );
 
   const userController = new UserController(
     new CreateUserUseCase(userRepo),
-    new CreateClientUseCase(userRepo, clientRepo),
-    new CreateProfessionalUseCase(userRepo, professionalRepo),
+    new CreateClientUseCase(userRepo, clientRepo, roleCacheRepo),
+    new CreateProfessionalUseCase(userRepo, professionalRepo, roleCacheRepo),
     new GetUserUseCase(userRepo),
     new GetUserByEmailUseCase(userRepo),
     new ListUsersUseCase(userRepo),
     new UpdateUserUseCase(userRepo),
     new DeleteUserUseCase(userRepo),
-    getUserFullProfile
+    getUserFullProfile,
+    assignUserRole
   );
 
   const clientController = new ClientController(

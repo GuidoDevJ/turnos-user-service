@@ -45,6 +45,15 @@ model Client {
   @@map("clients")
 }
 
+model RoleCache {
+  id       Int      @id
+  name     String   @unique @db.VarChar(50)
+  isActive Boolean  @default(true) @map("is_active")
+  syncedAt DateTime @default(now()) @updatedAt @map("synced_at")
+
+  @@map("roles_cache")
+}
+
 model Professional {
   id              Int      @id @default(autoincrement())
   userId          Int      @unique @map("user_id")

@@ -1,33 +1,28 @@
 import { IUserRepository } from "../../domain/repositories/user.repository";
 import { IProfessionalRepository } from "../../domain/repositories/professional.repository";
+import { IRoleCacheRepository } from "../../domain/repositories/role-cache.repository";
 import { RegisterProfessionalData } from "../../domain/entities/professional.entity";
 import { UserFullProfile } from "../../domain/entities/user-full-profile.entity";
 import { RoleId } from "../../config/roles";
+import { ConflictError } from "../../domain/errors/domain.error";
 
-/**
- * Use case: Register a new professional.
- * Creates the base User record and the associated Professional profile in a single operation.
- */
 export class CreateProfessionalUseCase {
   constructor(
     private readonly userRepository: IUserRepository,
-    private readonly professionalRepository: IProfessionalRepository
+    private readonly professionalRepository: IProfessionalRepository,
+    private readonly roleCacheRepository?: IRoleCacheRepository
   ) {}
 
-  /**
-   * Registers a new professional by creating both the user and professional profile.
-   * @param data - Registration data including user fields and optional professional-specific fields
-   * @returns The full professional profile (user + professional extension)
-   */
   async execute(data: RegisterProfessionalData): Promise<UserFullProfile> {
-    const { bio, specialization, licenseNumber, yearsExperience, ...userFields } =
-      data;
+    const { bio, specialization, licenseNumber, yearsExperience, ...userFields } = data;
 
-    const user = await this.userRepository.create({
-      ...userFields,
-      roleId: RoleId.PROFESSIONAL,
-    });
+    const professionalRole = await this.roleCacheRepository?.findByName("PROFESSIONAL");
+    if (professionalRole && !professionalRole.isActive) {
+      throw new ConflictError("PROFESSIONAL role is not currently active");
+    }
+    const roleId = professionalRole?.id ?? RoleId.PROFESSIONAL;
 
+    const user = await this.userRepository.create({ ...userFields, roleId });
     const professional = await this.professionalRepository.create({
       userId: user.id,
       bio,
@@ -35,7 +30,6 @@ export class CreateProfessionalUseCase {
       licenseNumber,
       yearsExperience,
     });
-
     return { user, profile: professional, profileType: "PROFESSIONAL" };
   }
 }

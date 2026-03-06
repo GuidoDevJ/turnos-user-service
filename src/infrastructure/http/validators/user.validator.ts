@@ -55,3 +55,15 @@ export const registerUserSchema = z.object({
 export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type UpdateUserInput = z.infer<typeof updateUserSchema>;
 export type RegisterUserInput = z.infer<typeof registerUserSchema>;
+
+export const assignRoleSchema = z.object({
+  role: z.enum(["CLIENT", "PROFESSIONAL"]),
+  // Client-specific (optional)
+  preferredPaymentMethod: z.string().max(50).optional(),
+  notes: z.string().optional(),
+  // Professional-specific (optional)
+  bio: z.string().optional(),
+  specialization: z.string().max(100).optional(),
+  licenseNumber: z.string().max(50).optional(),
+  yearsExperience: z.number().int().positive().optional(),
+});

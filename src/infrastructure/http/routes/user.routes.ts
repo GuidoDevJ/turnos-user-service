@@ -8,217 +8,38 @@ import {
   paginationSchema,
   idParamSchema,
   emailParamSchema,
+  assignRoleSchema,
 } from "../validators/user.validator";
 import { registerClientSchema } from "../validators/client.validator";
 import { registerProfessionalSchema } from "../validators/professional.validator";
 
-/**
- * Creates the user router with all CRUD endpoints.
- * @param controller - The UserController instance (already wired to use cases)
- * @param authMiddleware - Auth middleware to apply. Defaults to firebaseAuth. Pass a no-op for tests.
- * @returns Express Router
- */
 export function createUserRouter(
   controller: UserController,
   authMiddleware: RequestHandler = firebaseAuth
 ): Router {
   const router = Router();
-
-  // All user routes require authentication
   router.use(authMiddleware);
 
-  /**
-   * @openapi
-   * /api/users:
-   *   post:
-   *     tags: [Users]
-   *     summary: Create a new user
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/CreateUserInput'
-   *     responses:
-   *       201:
-   *         description: User created successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/UserResponse'
-   *       400:
-   *         description: Validation error
-   *       409:
-   *         description: Conflict - duplicate email, username, or firebase UID
-   */
   router.post("/", validate(createUserSchema, "body"), controller.create);
+  router.post("/client", validate(registerClientSchema, "body"), controller.createClient);
+  router.post("/professional", validate(registerProfessionalSchema, "body"), controller.createProfessional);
 
-  /**
-   * @openapi
-   * /api/users/client:
-   *   post:
-   *     tags: [Users]
-   *     summary: Register a new client
-   *     description: Creates a user with the CLIENT role and a linked client profile atomically
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/RegisterClientInput'
-   *     responses:
-   *       201:
-   *         description: Client registered successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/UserFullProfileResponse'
-   *       400:
-   *         description: Validation error
-   *       409:
-   *         description: Conflict - duplicate email, username, or firebase UID
-   */
-  router.post(
-    "/client",
-    validate(registerClientSchema, "body"),
-    controller.createClient
-  );
-
-  /**
-   * @openapi
-   * /api/users/professional:
-   *   post:
-   *     tags: [Users]
-   *     summary: Register a new professional
-   *     description: Creates a user with the PROFESSIONAL role and a linked professional profile atomically
-   *     requestBody:
-   *       required: true
-   *       content:
-   *         application/json:
-   *           schema:
-   *             $ref: '#/components/schemas/RegisterProfessionalInput'
-   *     responses:
-   *       201:
-   *         description: Professional registered successfully
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/UserFullProfileResponse'
-   *       400:
-   *         description: Validation error
-   *       409:
-   *         description: Conflict - duplicate email, username, or firebase UID
-   */
-  router.post(
-    "/professional",
-    validate(registerProfessionalSchema, "body"),
-    controller.createProfessional
-  );
-
-  /**
-   * @openapi
-   * /api/users:
-   *   get:
-   *     tags: [Users]
-   *     summary: List users with pagination
-   *     parameters:
-   *       - in: query
-   *         name: page
-   *         schema:
-   *           type: integer
-   *           default: 1
-   *         description: Page number
-   *       - in: query
-   *         name: limit
-   *         schema:
-   *           type: integer
-   *           default: 10
-   *         description: Items per page (max 100)
-   *     responses:
-   *       200:
-   *         description: Paginated list of users
-   */
   router.get("/", validate(paginationSchema, "query"), controller.list);
+  router.get("/email/:email", validate(emailParamSchema, "params"), controller.getByEmail);
+
+  // Static sub-paths before /:id to avoid shadowing
+  router.get("/:id/profile", validate(idParamSchema, "params"), controller.getFullProfile);
 
   /**
    * @openapi
-   * /api/users/email/{email}:
-   *   get:
+   * /api/users/{id}/assign-role:
+   *   post:
    *     tags: [Users]
-   *     summary: Get a user by email
-   *     parameters:
-   *       - in: path
-   *         name: email
-   *         required: true
-   *         schema:
-   *           type: string
-   *           format: email
-   *     responses:
-   *       200:
-   *         description: User found
-   *       404:
-   *         description: User not found
-   */
-  router.get(
-    "/email/:email",
-    validate(emailParamSchema, "params"),
-    controller.getByEmail
-  );
-
-  /**
-   * @openapi
-   * /api/users/{id}/profile:
-   *   get:
-   *     tags: [Users]
-   *     summary: Get the full profile of a user (base data + client or professional extension)
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *     responses:
-   *       200:
-   *         description: Full user profile
-   *         content:
-   *           application/json:
-   *             schema:
-   *               $ref: '#/components/schemas/UserFullProfileResponse'
-   *       404:
-   *         description: User not found
-   */
-  router.get(
-    "/:id/profile",
-    validate(idParamSchema, "params"),
-    controller.getFullProfile
-  );
-
-  /**
-   * @openapi
-   * /api/users/{id}:
-   *   get:
-   *     tags: [Users]
-   *     summary: Get a user by ID
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *     responses:
-   *       200:
-   *         description: User found
-   *       404:
-   *         description: User not found
-   */
-  router.get("/:id", validate(idParamSchema, "params"), controller.getById);
-
-  /**
-   * @openapi
-   * /api/users/{id}:
-   *   put:
-   *     tags: [Users]
-   *     summary: Update a user
+   *     summary: Assign or transition a user to CLIENT or PROFESSIONAL role
+   *     description: |
+   *       Updates the user's roleId and creates the associated profile
+   *       (Client or Professional) if it does not already exist.
+   *       Publishes a USER_ROLE_ASSIGNED event to the user-events queue.
    *     parameters:
    *       - in: path
    *         name: id
@@ -230,45 +51,42 @@ export function createUserRouter(
    *       content:
    *         application/json:
    *           schema:
-   *             $ref: '#/components/schemas/UpdateUserInput'
+   *             type: object
+   *             required: [role]
+   *             properties:
+   *               role:
+   *                 type: string
+   *                 enum: [CLIENT, PROFESSIONAL]
+   *               preferredPaymentMethod:
+   *                 type: string
+   *               notes:
+   *                 type: string
+   *               bio:
+   *                 type: string
+   *               specialization:
+   *                 type: string
+   *               licenseNumber:
+   *                 type: string
+   *               yearsExperience:
+   *                 type: integer
    *     responses:
    *       200:
-   *         description: User updated
+   *         description: Role assigned — full profile returned
    *       404:
    *         description: User not found
    *       409:
-   *         description: Conflict
+   *         description: User already has this role, or role is inactive
    */
-  router.put(
-    "/:id",
+  router.post(
+    "/:id/assign-role",
     validate(idParamSchema, "params"),
-    validate(updateUserSchema, "body"),
-    controller.update
+    validate(assignRoleSchema, "body"),
+    controller.assignRole
   );
 
-  /**
-   * @openapi
-   * /api/users/{id}:
-   *   delete:
-   *     tags: [Users]
-   *     summary: Soft-delete a user (deactivate)
-   *     parameters:
-   *       - in: path
-   *         name: id
-   *         required: true
-   *         schema:
-   *           type: integer
-   *     responses:
-   *       200:
-   *         description: User deactivated
-   *       404:
-   *         description: User not found
-   */
-  router.delete(
-    "/:id",
-    validate(idParamSchema, "params"),
-    controller.delete
-  );
+  router.get("/:id", validate(idParamSchema, "params"), controller.getById);
+  router.put("/:id", validate(idParamSchema, "params"), validate(updateUserSchema, "body"), controller.update);
+  router.delete("/:id", validate(idParamSchema, "params"), controller.delete);
 
   return router;
 }
