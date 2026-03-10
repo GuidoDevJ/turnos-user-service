@@ -10,7 +10,7 @@ datasource db {
 model User {
   id              Int           @id @default(autoincrement())
   firebaseUid     String        @unique @map("firebase_uid") @db.VarChar(128)
-  username        String        @unique @db.VarChar(50)
+  username        String        @db.VarChar(50)
   email           String        @unique @db.VarChar(255)
   firstName       String        @map("first_name") @db.VarChar(100)
   lastName        String        @map("last_name") @db.VarChar(100)

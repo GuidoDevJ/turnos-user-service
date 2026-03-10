@@ -101,6 +101,8 @@ SQS_USER_EVENTS_QUEUE_URL=http://localhost:4566/000000000000/user-events
 
 ## Instalación y arranque
 
+> **Primera vez levantando el servicio** — seguir los pasos en orden. No saltear el paso 4 (`prisma:generate`): el cliente Prisma se genera en `src/generated/prisma/` (ruta personalizada) y **no está commiteado al repositorio**, por lo que el servidor no levanta sin este paso.
+
 ### 1. Instalar dependencias
 ```bash
 npm install
@@ -124,7 +126,15 @@ Deben aparecer las colas: `user-profile-requests`, `user-profile-responses`, `ro
 npx prisma migrate deploy
 ```
 
-### 4. Iniciar el servidor
+### 4. Generar el cliente Prisma
+
+> ⚠️ Paso obligatorio en la primera instalación y cada vez que cambie `prisma/schema.prisma`.
+
+```bash
+npm run prisma:generate
+```
+
+### 5. Iniciar el servidor
 
 **Desarrollo** (con hot-reload):
 ```bash
@@ -260,7 +270,6 @@ curl -s -X POST \
 | `POST` | `/api/users/client` | Registrar como cliente | `{ firebaseUid, username, email, firstName, lastName }` + opcionales de cliente |
 | `POST` | `/api/users/professional` | Registrar como profesional | `{ firebaseUid, username, email, firstName, lastName }` + opcionales de profesional |
 | `GET` | `/api/users` | Listar usuarios | — (`?page=1&limit=10`) |
-| `GET` | `/api/users/email/:email` | Buscar por email | — |
 | `GET` | `/api/users/:id` | Obtener por ID | — |
 | `GET` | `/api/users/:id/profile` | Perfil completo (usuario + rol + perfiles) | — |
 | `PUT` | `/api/users/:id` | Actualizar usuario | campos opcionales |

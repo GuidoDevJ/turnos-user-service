@@ -216,6 +216,109 @@ const options: swaggerJsdoc.Options = {
             },
           },
         },
+        AssignRoleInput: {
+          type: "object",
+          required: ["role"],
+          properties: {
+            role: {
+              type: "string",
+              enum: ["CLIENT", "PROFESSIONAL"],
+              example: "CLIENT",
+              description: "Target role to assign to the user",
+            },
+            preferredPaymentMethod: {
+              type: "string",
+              maxLength: 50,
+              example: "credit_card",
+              description: "Only for role = CLIENT",
+            },
+            notes: {
+              type: "string",
+              example: "Prefers morning appointments",
+              description: "Only for role = CLIENT",
+            },
+            bio: {
+              type: "string",
+              example: "Experienced physiotherapist.",
+              description: "Only for role = PROFESSIONAL",
+            },
+            specialization: {
+              type: "string",
+              maxLength: 100,
+              example: "Physiotherapy",
+              description: "Only for role = PROFESSIONAL",
+            },
+            licenseNumber: {
+              type: "string",
+              maxLength: 50,
+              example: "MN-123456",
+              description: "Only for role = PROFESSIONAL",
+            },
+            yearsExperience: {
+              type: "integer",
+              minimum: 0,
+              maximum: 80,
+              example: 10,
+              description: "Only for role = PROFESSIONAL",
+            },
+          },
+        },
+        UserListResponse: {
+          type: "object",
+          properties: {
+            status: { type: "string", example: "success" },
+            data: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  id: { type: "integer", example: 1 },
+                  firebaseUid: { type: "string", example: "firebase-abc123" },
+                  username: { type: "string", example: "johndoe" },
+                  email: { type: "string", example: "john@example.com" },
+                  firstName: { type: "string", example: "John" },
+                  lastName: { type: "string", example: "Doe" },
+                  phone: { type: "string", nullable: true },
+                  address: { type: "string", nullable: true },
+                  roleId: { type: "integer", example: 3 },
+                  isActive: { type: "boolean", example: true },
+                  isVerified: { type: "boolean", example: false },
+                  createdAt: { type: "string", format: "date-time" },
+                  updatedAt: { type: "string", format: "date-time" },
+                },
+              },
+            },
+            total: { type: "integer", example: 42 },
+            page: { type: "integer", example: 1 },
+            limit: { type: "integer", example: 10 },
+            totalPages: { type: "integer", example: 5 },
+          },
+        },
+      },
+    },
+    paths: {
+      "/health": {
+        get: {
+          tags: ["Health"],
+          summary: "Health check",
+          description: "Returns 200 if the service is running.",
+          security: [],
+          responses: {
+            200: {
+              description: "Service is healthy",
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      status: { type: "string", example: "ok" },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
     security: [{ bearerAuth: [] }],
